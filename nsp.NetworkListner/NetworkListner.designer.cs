@@ -1,4 +1,4 @@
-﻿namespace NSP.LightingControl.Controls
+﻿namespace nsp.NetworkListner
 {
     partial class NetworkListner
     {

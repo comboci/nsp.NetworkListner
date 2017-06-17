@@ -5,8 +5,9 @@ using System.Net;
 using System.Threading;
 using System.ComponentModel;
 using System.Collections.Generic;
+using System.Collections;
 
-namespace NSP.LightingControl.Controls
+namespace nsp.NetworkListner
 {
     [DefaultEvent("DataRecived")]
     public partial class NetworkListner : Component
@@ -20,43 +21,38 @@ namespace NSP.LightingControl.Controls
         public event daRe DataRecived;
 
         public delegate void logEv(string Log);
-        [Description("Log a event from listener")]
+        [Description("log a event from listener")]
         public event logEv LogRecived;
 
-        public delegate void ClientConnected(string IpAddress);
-        [Description("Connect a Client To Listner")]
-        public event ClientConnected OnClientConnect;
-
         public delegate void chngcount();
-        [Description("Fire when count of client change")]
+        [Description("fire when count of client change")]
         public event chngcount CountOfClinetChange;
 
-        [Category("nsp"),Description("Port Of Server")]
+        [Category("nsp"), Description("Port Of Server")]
         public string Port { get; set; } = "6000";
 
 
         [Category("nsp"), Description("Ip of Server")]
         public string ServerIP { get; set; } = "127.0.0.1";
 
-        public List<Socket> OnlineSocket { get; set; }
+        private ArrayList OnlineSocket { get; set; }
 
         public NetworkListner()
         {
             InitializeComponent();
-            OnlineSocket = new List<Socket>();
         }
 
         public NetworkListner(IContainer container)
         {
             container.Add(this);
             InitializeComponent();
-            OnlineSocket = new List<Socket>();
         }
 
         public void StartListening(string IP, string port)
         {
             ServerIP = IP;
             Port = port;
+            OnlineSocket = new ArrayList();
 
             if (bgw_StartListner == null)
             {
@@ -129,12 +125,10 @@ namespace NSP.LightingControl.Controls
             {
                 for (int i = 0; i < OnlineSocket.Count; i++)
                     if (OnlineSocket[i] != null)
-                        if (((IPEndPoint)OnlineSocket[i].RemoteEndPoint).Address.ToString() == ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString())
+                        if (((IPEndPoint)(((Socket)OnlineSocket[i]).RemoteEndPoint)).Address.ToString() == ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString())
                             OnlineSocket[i] = null;
 
                 OnlineSocket.Add(handler);
-                if (OnClientConnect != null)
-                    OnClientConnect( ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString());
             }
 
             // Create the state object.
@@ -186,23 +180,24 @@ namespace NSP.LightingControl.Controls
 
         public void Send(string IpAddress, string data)
         {
-            if (OnlineSocket==null)
-            {
-                Console.WriteLine("Onlibe Socket is null");
-                return;
-            }
-
             for (int i = 0; i < OnlineSocket.Count; i++)
             {
                 if (OnlineSocket[i] == null)
                     continue;
 
-                if (((IPEndPoint)OnlineSocket[i].RemoteEndPoint).Address.ToString() == IpAddress)
+                if (((IPEndPoint)(((Socket)OnlineSocket[i]).RemoteEndPoint)).Address.ToString() == IpAddress)
                 {
-                    Send(OnlineSocket[i], data);
+                    Send(((Socket)OnlineSocket[i]), data);
                     break;
                 }
             }
+
+            //foreach (Socket item in OnlineSocket)
+            //    if (((System.Net.IPEndPoint)(item.RemoteEndPoint)).Address.ToString() == IpAddress)
+            //    {
+            //        Send(item, data);
+            //        break;
+            //    }
         }
 
         private void Send(Socket handler, string data)
