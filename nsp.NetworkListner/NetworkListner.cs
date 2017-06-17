@@ -28,12 +28,16 @@ namespace nsp.NetworkListner
         [Description("fire when count of client change")]
         public event chngcount CountOfClinetChange;
 
-        [Category("nsp"), Description("Port Of Server")]
-        public string Port { get; set; } = "6000";
+        [Category("Nama")]
+        [DefaultValue("0")]
+        [Description("Port Of Server")]
+        public string Port { get; set; }
 
 
-        [Category("nsp"), Description("Ip of Server")]
-        public string ServerIP { get; set; } = "127.0.0.1";
+        [Category("Nama")]
+        [DefaultValue("127.0.0.1")]
+        [Description("Ip of Server")]
+        public string ServerIP { get; set; }
 
         private ArrayList OnlineSocket { get; set; }
 
