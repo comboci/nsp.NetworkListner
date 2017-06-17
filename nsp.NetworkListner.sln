@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nsp.NetworkListner", "nsp.NetworkListner\nsp.NetworkListner.csproj", "{D643BA52-8940-4069-96F9-600FD87EC032}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D643BA52-8940-4069-96F9-600FD87EC032}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D643BA52-8940-4069-96F9-600FD87EC032}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D643BA52-8940-4069-96F9-600FD87EC032}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D643BA52-8940-4069-96F9-600FD87EC032}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
