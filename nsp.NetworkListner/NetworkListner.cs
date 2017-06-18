@@ -127,7 +127,7 @@ namespace nsp.NetworkListner
             catch (Exception ex)
             {
                 if (LogRecived != null)
-                    LogRecived(LogTypes.Error, ex.ToString());
+                    LogRecived(LogTypes.UnsuccessfulInitial, ex.ToString());
             }
         }
 
