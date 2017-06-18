@@ -31,17 +31,21 @@ namespace nsp.NetworkListner
         [Description("Rise when received a data from any client")]
         public event dataRecived DataRecived;
 
-        public delegate void logEv(LogTypes LogType, string Log);
+        public delegate void logRecived(LogTypes LogType, string Log);
         [Description("Log a event from listener")]
-        public event logEv LogRecived;
+        public event logRecived LogRecived;
 
-        public delegate void ClientConnected(string IpAddress);
+        public delegate void onClientConnect(string IpAddress);
         [Description("Connect a Client To Listner")]
-        public event ClientConnected OnClientConnect;
+        public event onClientConnect OnClientConnect;
 
-        public delegate void chngcount();
+        public delegate void countOfClinetChange();
         [Description("fire when count of client change")]
-        public event chngcount CountOfClinetChange;
+        public event countOfClinetChange CountOfClinetChange;
+
+        public delegate void onClientDisConnect(string IpAddress);
+        [Description("DisConnect a Client To Listner")]
+        public event onClientConnect OnClientDisConnect;
 
         [Category("nsp")]
         [DefaultValue("0")]
@@ -132,6 +136,9 @@ namespace nsp.NetworkListner
             // Signal the main thread to continue.
             allDone.Set();
 
+            if (OnlineSocket == null)
+                OnlineSocket = new List<Socket>();
+
             if (listener == null) return;
 
             // Get the socket that handles the client request.
@@ -141,18 +148,18 @@ namespace nsp.NetworkListner
                 CountOfClinetChange();
 
             if (LogRecived != null)
-                LogRecived(LogTypes.Error, string.Format("Client {0} is now connected", ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString()));
+                LogRecived(LogTypes.Error, string.Format("Client {0} is now connected", handler.IpAdress()));
 
             if (!OnlineSocket.Contains(handler))
             {
                 for (int i = 0; i < OnlineSocket.Count; i++)
                     if (OnlineSocket[i] != null)
-                        if (((IPEndPoint)OnlineSocket[i].RemoteEndPoint).Address.ToString() == ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString())
+                        if (OnlineSocket[i].IpAdress() == handler.IpAdress())
                             OnlineSocket[i] = null;
 
                 OnlineSocket.Add(handler);
                 if (OnClientConnect != null)
-                    OnClientConnect(((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString());
+                    OnClientConnect(handler.IpAdress());
             }
 
             // Create the state object.
@@ -176,8 +183,11 @@ namespace nsp.NetworkListner
                     // Read data from the client socket. 
                     bytesRead = handler.EndReceive(ar);
                 else
-                    LogRecived(LogTypes.ClientConnected, string.Format("Client {0} is now disconected: ",
-                        ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString()));
+                {
+                    LogRecived(LogTypes.ClientConnected, string.Format("Client {0} is now disconected: ", handler.IpAdress()));
+                    if (OnClientDisConnect != null)
+                        OnClientDisConnect(handler.IpAdress());
+                }
             }
             catch (Exception ex)
             {
@@ -194,7 +204,6 @@ namespace nsp.NetworkListner
                 for (int i = 0; i < bytesRead; i++)
                     content += (char)state.buffer[i];
 
-
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
 
                 if (DataRecived != null)
@@ -206,7 +215,7 @@ namespace nsp.NetworkListner
         {
             if (OnlineSocket == null)
             {
-                Console.WriteLine("Onlibe Socket is null");
+                LogRecived(LogTypes.Error, "Online Socket is null");
                 return;
             }
 
@@ -215,7 +224,7 @@ namespace nsp.NetworkListner
                 if (OnlineSocket[i] == null)
                     continue;
 
-                if (((IPEndPoint)OnlineSocket[i].RemoteEndPoint).Address.ToString() == IpAddress)
+                if (OnlineSocket[i].IpAdress() == IpAddress)
                 {
                     Send(OnlineSocket[i], data);
                     break;
@@ -266,6 +275,16 @@ namespace nsp.NetworkListner
 
             if (LogRecived != null)
                 LogRecived(LogTypes.ServerStoped, "Server stopped");
+        }
+    }
+
+    public static class Helper
+    {
+        public static string IpAdress(this Socket socket)
+        {
+            if (socket == null)
+                return "";
+            return ((IPEndPoint)socket.RemoteEndPoint).Address.ToString();
         }
     }
 
