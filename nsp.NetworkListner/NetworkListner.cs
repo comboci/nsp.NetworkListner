@@ -5,23 +5,34 @@ using System.Net;
 using System.Threading;
 using System.ComponentModel;
 using System.Collections.Generic;
-using System.Collections;
 
 namespace nsp.NetworkListner
 {
     [DefaultEvent("DataRecived")]
     public partial class NetworkListner : Component
     {
+        public enum LogTypes
+        {
+            SuccessfulInitial,
+            UnsuccessfulInitial,
+            WaitingForConnection,
+            ClientConnected,
+            ClientDisconnected,
+            DateSent,
+            ServerStoped,
+            Error
+        }
+
         // Thread signal.
         public static ManualResetEvent allDone = new ManualResetEvent(false);
         Socket listener;
 
-        public delegate void daRe(string IP, string Data);
+        public delegate void dataRecived(string IP, string Data);
         [Description("Rise when received a data from any client")]
-        public event daRe DataRecived;
+        public event dataRecived DataRecived;
 
-        public delegate void logEv(string Log);
-        [Description("log a event from listener")]
+        public delegate void logEv(LogTypes LogType, string Log);
+        [Description("Log a event from listener")]
         public event logEv LogRecived;
 
         public delegate void ClientConnected(string IpAddress);
@@ -32,13 +43,13 @@ namespace nsp.NetworkListner
         [Description("fire when count of client change")]
         public event chngcount CountOfClinetChange;
 
-        [Category("Nama")]
+        [Category("nsp")]
         [DefaultValue("0")]
         [Description("Port Of Server")]
         public string Port { get; set; }
 
 
-        [Category("Nama")]
+        [Category("nsp")]
         [DefaultValue("127.0.0.1")]
         [Description("Ip of Server")]
         public string ServerIP { get; set; }
@@ -67,9 +78,9 @@ namespace nsp.NetworkListner
 
             if (bgw_StartListner == null)
             {
-                bgw_StartListner = new System.ComponentModel.BackgroundWorker();
+                bgw_StartListner = new BackgroundWorker();
                 bgw_StartListner.WorkerSupportsCancellation = true;
-                bgw_StartListner.DoWork += new System.ComponentModel.DoWorkEventHandler(bgw_StartListner_DoWork);
+                bgw_StartListner.DoWork += new DoWorkEventHandler(bgw_StartListner_DoWork);
             }
 
             bgw_StartListner.RunWorkerAsync();
@@ -91,7 +102,7 @@ namespace nsp.NetworkListner
                 listener.Bind(localEndPoint);
                 listener.Listen(100);
                 if (LogRecived != null)
-                    LogRecived("Network Listener Was Started Successfully");
+                    LogRecived(LogTypes.SuccessfulInitial, "Network Listener Was Started Successfully");
 
                 while (true)
                 {
@@ -101,7 +112,7 @@ namespace nsp.NetworkListner
                     // Start an asynchronous socket to listen for connections.
                     //Console.WriteLine("Waiting for a connection...");
                     if (LogRecived != null)
-                        LogRecived("Network Listener Waiting for a connection...");
+                        LogRecived(LogTypes.WaitingForConnection, "Network Listener Waiting for a connection...");
 
                     listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
 
@@ -112,7 +123,7 @@ namespace nsp.NetworkListner
             catch (Exception ex)
             {
                 if (LogRecived != null)
-                    LogRecived(ex.ToString());
+                    LogRecived(LogTypes.Error, ex.ToString());
             }
         }
 
@@ -130,7 +141,7 @@ namespace nsp.NetworkListner
                 CountOfClinetChange();
 
             if (LogRecived != null)
-                LogRecived(string.Format("Client {0} is now connected", ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString()));
+                LogRecived(LogTypes.Error, string.Format("Client {0} is now connected", ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString()));
 
             if (!OnlineSocket.Contains(handler))
             {
@@ -165,13 +176,13 @@ namespace nsp.NetworkListner
                     // Read data from the client socket. 
                     bytesRead = handler.EndReceive(ar);
                 else
-                    LogRecived(string.Format("Client {0} is now disconected: ",
+                    LogRecived(LogTypes.ClientConnected, string.Format("Client {0} is now disconected: ",
                         ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString()));
             }
             catch (Exception ex)
             {
                 if (LogRecived != null)
-                    LogRecived(ex.ToString());
+                    LogRecived(LogTypes.Error, ex.ToString());
             }
 
             if (bytesRead > 0)
@@ -232,7 +243,7 @@ namespace nsp.NetworkListner
                 int bytesSent = handler.EndSend(ar);
 
                 if (LogRecived != null)
-                    LogRecived(string.Format("Sent {0} bytes to client.", bytesSent));
+                    LogRecived(LogTypes.DateSent, string.Format("Sent {0} bytes to client.", bytesSent));
 
                 //handler.Shutdown(SocketShutdown.Both);
                 //handler.Close();
@@ -240,7 +251,7 @@ namespace nsp.NetworkListner
             catch (Exception e)
             {
                 if (LogRecived != null)
-                    LogRecived(e.ToString());
+                    LogRecived(LogTypes.Error, e.ToString());
             }
         }
 
@@ -254,7 +265,7 @@ namespace nsp.NetworkListner
                 CountOfClinetChange();
 
             if (LogRecived != null)
-                LogRecived("Server stopped");
+                LogRecived(LogTypes.ServerStoped, "Server stopped");
         }
     }
 
