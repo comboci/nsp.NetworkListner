@@ -24,6 +24,10 @@ namespace nsp.NetworkListner
         [Description("log a event from listener")]
         public event logEv LogRecived;
 
+        public delegate void ClientConnected(string IpAddress);
+        [Description("Connect a Client To Listner")]
+        public event ClientConnected OnClientConnect;
+
         public delegate void chngcount();
         [Description("fire when count of client change")]
         public event chngcount CountOfClinetChange;
@@ -39,24 +43,27 @@ namespace nsp.NetworkListner
         [Description("Ip of Server")]
         public string ServerIP { get; set; }
 
-        private ArrayList OnlineSocket { get; set; }
+        public List<Socket> OnlineSocket { get; set; }
 
         public NetworkListner()
         {
             InitializeComponent();
+            if (!(LicenseManager.UsageMode == LicenseUsageMode.Designtime))//detect design mode
+                OnlineSocket = new List<Socket>();
         }
 
         public NetworkListner(IContainer container)
         {
             container.Add(this);
             InitializeComponent();
+            if (!(LicenseManager.UsageMode == LicenseUsageMode.Designtime))//detect design mode
+                OnlineSocket = new List<Socket>();
         }
 
         public void StartListening(string IP, string port)
         {
             ServerIP = IP;
             Port = port;
-            OnlineSocket = new ArrayList();
 
             if (bgw_StartListner == null)
             {
@@ -129,10 +136,12 @@ namespace nsp.NetworkListner
             {
                 for (int i = 0; i < OnlineSocket.Count; i++)
                     if (OnlineSocket[i] != null)
-                        if (((IPEndPoint)(((Socket)OnlineSocket[i]).RemoteEndPoint)).Address.ToString() == ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString())
+                        if (((IPEndPoint)OnlineSocket[i].RemoteEndPoint).Address.ToString() == ((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString())
                             OnlineSocket[i] = null;
 
                 OnlineSocket.Add(handler);
+                if (OnClientConnect != null)
+                    OnClientConnect(((IPEndPoint)(handler.RemoteEndPoint)).Address.ToString());
             }
 
             // Create the state object.
@@ -184,24 +193,23 @@ namespace nsp.NetworkListner
 
         public void Send(string IpAddress, string data)
         {
+            if (OnlineSocket == null)
+            {
+                Console.WriteLine("Onlibe Socket is null");
+                return;
+            }
+
             for (int i = 0; i < OnlineSocket.Count; i++)
             {
                 if (OnlineSocket[i] == null)
                     continue;
 
-                if (((IPEndPoint)(((Socket)OnlineSocket[i]).RemoteEndPoint)).Address.ToString() == IpAddress)
+                if (((IPEndPoint)OnlineSocket[i].RemoteEndPoint).Address.ToString() == IpAddress)
                 {
-                    Send(((Socket)OnlineSocket[i]), data);
+                    Send(OnlineSocket[i], data);
                     break;
                 }
             }
-
-            //foreach (Socket item in OnlineSocket)
-            //    if (((System.Net.IPEndPoint)(item.RemoteEndPoint)).Address.ToString() == IpAddress)
-            //    {
-            //        Send(item, data);
-            //        break;
-            //    }
         }
 
         private void Send(Socket handler, string data)
