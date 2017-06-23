@@ -58,7 +58,7 @@ namespace nsp.NetworkListner
         [Description("Ip of Server")]
         public string ServerIP { get; set; }
 
-        public List<Socket> OnlineSocket { get; set; }
+        public List<Socket> OnlineSocket;
 
         public NetworkListner()
         {
@@ -92,15 +92,9 @@ namespace nsp.NetworkListner
 
         private void bgw_StartListner_DoWork(object sender, DoWorkEventArgs e)
         {
-            // Establish the local endpoint for the socket.
-            // The DNS name of the computer
-            // running the listener is "host.contoso.com".
             IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Parse(ServerIP), int.Parse(Port));
-
-            // Create a TCP/IP socket.
             listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-            // Bind the socket to the local endpoint and listen for incoming connections.
             try
             {
                 listener.Bind(localEndPoint);
@@ -110,17 +104,10 @@ namespace nsp.NetworkListner
 
                 while (true)
                 {
-                    // Set the event to non signaled state.
                     allDone.Reset();
-
-                    // Start an asynchronous socket to listen for connections.
-                    //Console.WriteLine("Waiting for a connection...");
                     if (LogRecived != null)
                         LogRecived(LogTypes.WaitingForConnection, "Network Listener Waiting for a connection...");
-
                     listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
-
-                    // Wait until a connection is made before continuing.
                     allDone.WaitOne();
                 }
             }
@@ -133,7 +120,6 @@ namespace nsp.NetworkListner
 
         public void AcceptCallback(IAsyncResult ar)
         {
-            // Signal the main thread to continue.
             allDone.Set();
 
             if (OnlineSocket == null)
@@ -141,7 +127,6 @@ namespace nsp.NetworkListner
 
             if (listener == null) return;
 
-            // Get the socket that handles the client request.
             Socket handler = listener.EndAccept(ar);
 
             if (CountOfClinetChange != null)
@@ -152,6 +137,12 @@ namespace nsp.NetworkListner
 
             if (!OnlineSocket.Contains(handler))
             {
+                //OnlineSocket.ForEach(x =>
+                //{
+                //    if (x!=null && x.IpAdress() == handler.IpAdress())
+                //        x = null;
+                //});
+
                 for (int i = 0; i < OnlineSocket.Count; i++)
                     if (OnlineSocket[i] != null)
                         if (OnlineSocket[i].IpAdress() == handler.IpAdress())
@@ -184,7 +175,7 @@ namespace nsp.NetworkListner
                     bytesRead = handler.EndReceive(ar);
                 else
                 {
-                    LogRecived(LogTypes.ClientConnected, string.Format("Client {0} is now disconected: ", handler.IpAdress()));
+                    LogRecived(LogTypes.ClientDisconnected, string.Format("Client {0} is now disconected: ", handler.IpAdress()));
                     if (OnClientDisConnect != null)
                         OnClientDisConnect(handler.IpAdress());
                 }
@@ -215,7 +206,7 @@ namespace nsp.NetworkListner
         {
             if (OnlineSocket == null)
             {
-                LogRecived(LogTypes.Error, "Online Socket is null");
+                LogRecived(LogTypes.Error, "OnlineSocket is null");
                 return;
             }
 
