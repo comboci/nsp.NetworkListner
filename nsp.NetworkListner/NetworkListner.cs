@@ -40,7 +40,7 @@ namespace nsp.NetworkListner
         public event onClientConnect OnClientConnect;
 
         public delegate void countOfClinetChange();
-        [Description("fire when count of client change")]
+        [Description("Fire when count of client change")]
         public event countOfClinetChange CountOfClinetChange;
 
         public delegate void onClientDisConnect(string IpAddress);
@@ -63,7 +63,7 @@ namespace nsp.NetworkListner
         public NetworkListner()
         {
             InitializeComponent();
-            if (!(LicenseManager.UsageMode == LicenseUsageMode.Designtime))//detect design mode
+            if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)//detect design mode
                 OnlineSocket = new List<Socket>();
         }
 
@@ -71,7 +71,7 @@ namespace nsp.NetworkListner
         {
             container.Add(this);
             InitializeComponent();
-            if (!(LicenseManager.UsageMode == LicenseUsageMode.Designtime))//detect design mode
+            if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)//detect design mode
                 OnlineSocket = new List<Socket>();
         }
 
@@ -133,7 +133,7 @@ namespace nsp.NetworkListner
                 CountOfClinetChange();
 
             if (LogRecived != null)
-                LogRecived(LogTypes.Error, string.Format("Client {0} is now connected", handler.IpAdress()));
+                LogRecived(LogTypes.ClientConnected, string.Format("Client {0} is now connected", handler.IpAdress()));
 
             if (!OnlineSocket.Contains(handler))
             {
