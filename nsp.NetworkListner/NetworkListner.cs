@@ -45,7 +45,7 @@ namespace nsp.NetworkListner
 
         public delegate void onClientDisConnect(string IpAddress);
         [Description("DisConnect a Client To Listner")]
-        public event onClientConnect OnClientDisConnect;
+        public event onClientDisConnect OnClientDisConnect;
 
         [Category("nsp")]
         [DefaultValue("0")]
@@ -99,22 +99,19 @@ namespace nsp.NetworkListner
             {
                 listener.Bind(localEndPoint);
                 listener.Listen(100);
-                if (LogRecived != null)
-                    LogRecived(LogTypes.SuccessfulInitial, "Network Listener Was Started Successfully");
+                LogRecived?.Invoke(LogTypes.SuccessfulInitial, "Network Listener Was Started Successfully");
 
                 while (true)
                 {
                     allDone.Reset();
-                    if (LogRecived != null)
-                        LogRecived(LogTypes.WaitingForConnection, "Network Listener Waiting for a connection...");
+                    LogRecived?.Invoke(LogTypes.WaitingForConnection, "Network Listener Waiting for a connection...");
                     listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
                     allDone.WaitOne();
                 }
             }
             catch (Exception ex)
             {
-                if (LogRecived != null)
-                    LogRecived(LogTypes.UnsuccessfulInitial, ex.ToString());
+                LogRecived?.Invoke(LogTypes.UnsuccessfulInitial, ex.ToString());
             }
         }
 
@@ -129,11 +126,9 @@ namespace nsp.NetworkListner
 
             Socket handler = listener.EndAccept(ar);
 
-            if (CountOfClinetChange != null)
-                CountOfClinetChange();
+            CountOfClinetChange?.Invoke();
 
-            if (LogRecived != null)
-                LogRecived(LogTypes.ClientConnected, string.Format("Client {0} is now connected", handler.IpAdress()));
+            LogRecived?.Invoke(LogTypes.ClientConnected, string.Format("Client {0} is now connected", handler.IpAdress()));
 
             if (!OnlineSocket.Contains(handler))
             {
@@ -149,8 +144,7 @@ namespace nsp.NetworkListner
                             OnlineSocket[i] = null;
 
                 OnlineSocket.Add(handler);
-                if (OnClientConnect != null)
-                    OnClientConnect(handler.IpAdress());
+                OnClientConnect?.Invoke(handler.IpAdress());
             }
 
             // Create the state object.
@@ -175,15 +169,13 @@ namespace nsp.NetworkListner
                     bytesRead = handler.EndReceive(ar);
                 else
                 {
-                    LogRecived(LogTypes.ClientDisconnected, string.Format("Client {0} is now disconected: ", handler.IpAdress()));
-                    if (OnClientDisConnect != null)
-                        OnClientDisConnect(handler.IpAdress());
+                    LogRecived?.Invoke(LogTypes.ClientDisconnected, string.Format("Client {0} is now disconected: ", handler.IpAdress()));
+                    OnClientDisConnect?.Invoke(handler.IpAdress());
                 }
             }
             catch (Exception ex)
             {
-                if (LogRecived != null)
-                    LogRecived(LogTypes.Error, ex.ToString());
+                LogRecived?.Invoke(LogTypes.Error, ex.ToString());
             }
 
             if (bytesRead > 0)
@@ -197,8 +189,7 @@ namespace nsp.NetworkListner
 
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
 
-                if (DataRecived != null)
-                    DataRecived(((IPEndPoint)(((StateObject)(ar.AsyncState)).workSocket.RemoteEndPoint)).Address.ToString(), content);
+                DataRecived?.Invoke(((IPEndPoint)(((StateObject)(ar.AsyncState)).workSocket.RemoteEndPoint)).Address.ToString(), content);
             }
         }
 
@@ -206,7 +197,7 @@ namespace nsp.NetworkListner
         {
             if (OnlineSocket == null)
             {
-                LogRecived(LogTypes.Error, "OnlineSocket is null");
+                LogRecived?.Invoke(LogTypes.Error, "OnlineSocket is null");
                 return;
             }
 
@@ -242,16 +233,14 @@ namespace nsp.NetworkListner
                 // Complete sending the data to the remote device.
                 int bytesSent = handler.EndSend(ar);
 
-                if (LogRecived != null)
-                    LogRecived(LogTypes.DateSent, string.Format("Sent {0} bytes to client.", bytesSent));
+                LogRecived?.Invoke(LogTypes.DateSent, string.Format("Sent {0} bytes to client.", bytesSent));
 
                 //handler.Shutdown(SocketShutdown.Both);
                 //handler.Close();
             }
             catch (Exception e)
             {
-                if (LogRecived != null)
-                    LogRecived(LogTypes.Error, e.ToString());
+                LogRecived?.Invoke(LogTypes.Error, e.ToString());
             }
         }
 
@@ -261,11 +250,9 @@ namespace nsp.NetworkListner
             listener = null;
             bgw_StartListner = null;
 
-            if (CountOfClinetChange != null)
-                CountOfClinetChange();
+            CountOfClinetChange?.Invoke();
 
-            if (LogRecived != null)
-                LogRecived(LogTypes.ServerStoped, "Server stopped");
+            LogRecived?.Invoke(LogTypes.ServerStoped, "Server stopped");
         }
     }
 
